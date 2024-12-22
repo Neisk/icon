@@ -38,7 +38,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: json-artifact
-        path: ${{ github.workspace }}/icon.icons.json
+        path: ${{ github.workspace }}/icon.json
 
     - name: Push to icon Repository
       run: |
