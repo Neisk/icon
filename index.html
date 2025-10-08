@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nisc | 视频画廊</title>
+  <title>视频画廊</title>
   <style>
     :root {
       --bg: #0d0d0d;
@@ -22,50 +22,17 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-    }
-
-    header {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 16px 30px;
-      background: rgba(15,15,15,0.8);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      padding: 40px 20px;
     }
 
-    .logo {
-      font-size: 20px;
+    h1 {
+      font-size: 28px;
       font-weight: 600;
+      margin-bottom: 30px;
+      text-align: center;
       color: var(--accent);
-      letter-spacing: 1px;
-      cursor: pointer;
-      text-decoration: none;
     }
-
-    nav a {
-      margin-left: 24px;
-      color: var(--text);
-      text-decoration: none;
-      font-size: 15px;
-      transition: color 0.2s;
-    }
-
-    nav a:hover { color: var(--accent); }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 50px 20px 100px;
-    }
-
-    h1 { font-size: 28px; font-weight: 600; margin-bottom: 10px; text-align: center; }
-    p.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 40px; text-align: center; }
 
     .gallery {
       display: grid;
@@ -93,8 +60,6 @@
     .video-info { padding: 12px 16px; }
     .video-info h3 { font-size: 16px; margin: 0 0 6px; color: var(--text); }
     .video-info p { font-size: 13px; color: var(--muted); margin: 0; }
-
-    footer { padding: 20px; color: #666; font-size: 12px; text-align: center; }
 
     .player-modal {
       display: none;
@@ -126,30 +91,12 @@
       cursor: pointer;
       font-weight: 300;
     }
-
-    @media (max-width: 768px) {
-      header { padding: 14px 20px; }
-      nav a { margin-left: 16px; font-size: 14px; }
-      h1 { font-size: 22px; }
-    }
   </style>
 </head>
 <body>
-  <header>
-    <a href="https://nisc.fun" class="logo">Nisc</a>
-    <nav>
-      <a href="https://nisc.fun">主页</a>
-      <a href="#">视频</a>
-      <a href="https://nisc.fun/about">关于我</a>
-    </nav>
-  </header>
+  <h1>🎞️ 视频画廊</h1>
 
-  <main>
-    <h1>🎞️ Neisk 视频画廊</h1>
-    <p class="subtitle">点击任意缩略图即可在线播放</p>
-
-    <div class="gallery" id="gallery"></div>
-  </main>
+  <div class="gallery" id="gallery"></div>
 
   <div class="player-modal" id="playerModal">
     <span class="close-btn" id="closeBtn">×</span>
@@ -157,8 +104,6 @@
       <video id="videoPlayer" controls playsinline preload="metadata" width="100%"></video>
     </div>
   </div>
-
-  <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
   <script>
     const folder = "mp4"; // 所有视频文件夹
@@ -175,7 +120,7 @@
           .map(f => ({
             title: f.name,
             desc: "",
-            cover: "default_cover.jpg", // 默认封面
+            cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/default_cover.jpg", // 默认封面
             src: `https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${encodeURIComponent(f.name)}`
           }));
 
@@ -198,24 +143,6 @@
           });
 
           gallery.appendChild(card);
-
-          // 封面抓取首帧
-          const videoEl = document.createElement("video");
-          videoEl.src = v.src;
-          videoEl.muted = true;
-          videoEl.currentTime = 0.1;
-          videoEl.addEventListener("loadeddata", () => {
-            try {
-              const canvas = document.createElement("canvas");
-              canvas.width = videoEl.videoWidth;
-              canvas.height = videoEl.videoHeight;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-              card.querySelector("img").src = canvas.toDataURL("image/jpeg");
-            } catch (e) {
-              console.warn("封面生成失败", e);
-            }
-          });
         });
       })
       .catch(err => {
