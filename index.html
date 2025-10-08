@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neisk 视频库</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neisk 智能视频库</title>
   <style>
     :root {
       --bg: #0d0d0d;
@@ -15,164 +15,143 @@
 
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg);
       color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 30px 15px 60px;
+      text-align: center;
+      padding: 30px 15px 80px;
     }
 
     h1 {
-      margin: 0 0 15px;
       font-size: 26px;
-      font-weight: 600;
-      text-align: center;
       color: var(--accent);
+      margin-bottom: 10px;
     }
 
-    .search-box {
-      margin-bottom: 25px;
-      width: 100%;
+    input {
+      width: 90%;
       max-width: 400px;
-      display: flex;
-      justify-content: center;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: 12px;
+      padding: 10px;
+      border-radius: 10px;
       border: none;
-      background-color: #1f1f1f;
+      background: #1f1f1f;
       color: var(--text);
-      font-size: 15px;
       outline: none;
-      transition: all 0.3s ease;
-    }
-
-    input[type="text"]:focus {
-      background-color: #262626;
-      box-shadow: 0 0 0 2px var(--accent);
+      font-size: 15px;
+      margin-bottom: 25px;
     }
 
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 20px;
-      width: 100%;
       max-width: 1200px;
+      margin: auto;
     }
 
-    .video-card {
+    .card {
       background: var(--card);
       border-radius: 16px;
       overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transition: 0.3s;
+      cursor: pointer;
     }
 
-    .video-card:hover {
+    .card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
 
-    video {
+    img, video {
       width: 100%;
-      height: auto;
+      height: 160px;
+      object-fit: cover;
       display: block;
       background: #000;
     }
 
     .info {
-      padding: 12px 15px;
+      padding: 10px 14px;
+      text-align: left;
     }
 
     .title {
-      font-size: 16px;
-      margin: 0;
+      font-size: 15px;
       font-weight: 600;
     }
 
     .desc {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
-      margin-top: 6px;
-      line-height: 1.4;
     }
 
     footer {
-      margin-top: 40px;
+      margin-top: 50px;
       font-size: 12px;
       color: var(--muted);
-      text-align: center;
-    }
-
-    .hidden {
-      display: none !important;
     }
   </style>
 </head>
 <body>
-  <h1>🎥 Neisk 视频库</h1>
-  <div class="search-box">
-    <input type="text" id="search" placeholder="🔍 搜索视频标题...">
-  </div>
+  <h1>🎥 Neisk 智能视频库</h1>
+  <input type="text" id="search" placeholder="🔍 搜索视频...">
 
-  <div class="gallery" id="gallery">
-    <!-- 视频1 -->
-    <div class="video-card" data-title="湖边日落剪影">
-      <video controls poster="https://cdn.jsdelivr.net/gh/Neisk/icon@main/cover.jpg">
-        <source src="https://cdn.jsdelivr.net/gh/Neisk/icon@main/5237860479018326383.mp4" type="video/mp4">
-      </video>
-      <div class="info">
-        <p class="title">湖边日落剪影</p>
-        <p class="desc">拍摄于秋日黄昏，宁静的湖面与落日交相辉映。</p>
-      </div>
-    </div>
+  <div class="gallery" id="gallery">正在加载视频列表...</div>
 
-    <!-- 视频2 -->
-    <div class="video-card" data-title="城市夜景延时">
-      <video controls poster="https://cdn.jsdelivr.net/gh/Neisk/icon@main/cover2.jpg">
-        <source src="https://cdn.jsdelivr.net/gh/Neisk/icon@main/sample2.mp4" type="video/mp4">
-      </video>
-      <div class="info">
-        <p class="title">城市夜景延时</p>
-        <p class="desc">城市灯光流动如星河，展现现代都市的节奏。</p>
-      </div>
-    </div>
-
-    <!-- 视频3 -->
-    <div class="video-card" data-title="清晨树林漫步">
-      <video controls poster="https://cdn.jsdelivr.net/gh/Neisk/icon@main/cover3.jpg">
-        <source src="https://cdn.jsdelivr.net/gh/Neisk/icon@main/sample3.mp4" type="video/mp4">
-      </video>
-      <div class="info">
-        <p class="title">清晨树林漫步</p>
-        <p class="desc">阳光透过树叶，空气清新，世界刚刚苏醒。</p>
-      </div>
-    </div>
-  </div>
-
-  <footer>© 2025 Neisk · Powered by GitHub Pages + jsDelivr</footer>
+  <footer>© 2025 Neisk · 自动识别 GitHub 视频文件 · Powered by jsDelivr</footer>
 
   <script>
-    const searchInput = document.getElementById('search');
-    const cards = document.querySelectorAll('.video-card');
+    const repo = "Neisk/icon"; // ← 你的 GitHub 仓库名（格式：用户名/仓库名）
+    const gallery = document.getElementById("gallery");
+    const search = document.getElementById("search");
+    let videos = [];
 
-    searchInput.addEventListener('input', () => {
-      const keyword = searchInput.value.trim().toLowerCase();
-      cards.forEach(card => {
-        const title = card.dataset.title.toLowerCase();
-        if (title.includes(keyword)) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
+    // 从 GitHub API 获取文件列表
+    async function loadVideos() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${repo}/contents/`);
+        const data = await res.json();
+        videos = data.filter(f => f.name.endsWith(".mp4") || f.name.endsWith(".mov"))
+                     .map(f => ({
+                       name: decodeURIComponent(f.name.replace(/\.[^/.]+$/, "")),
+                       url: `https://cdn.jsdelivr.net/gh/${repo}@main/${f.name}`,
+                       cover: `https://cdn.jsdelivr.net/gh/${repo}@main/${f.name.replace(/\.[^/.]+$/, ".jpg")}`
+                     }));
+        render(videos);
+      } catch (err) {
+        gallery.innerHTML = `<p style="color:#f55;">❌ 加载失败，请检查仓库名或 API 限制。</p>`;
+      }
+    }
+
+    function render(list) {
+      if (list.length === 0) {
+        gallery.innerHTML = "<p>📭 暂无视频</p>";
+        return;
+      }
+      gallery.innerHTML = "";
+      list.forEach(v => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <img src="${v.cover}" onerror="this.src='https://via.placeholder.com/400x200?text=No+Cover';">
+          <div class="info">
+            <div class="title">${v.name}</div>
+            <div class="desc">点击播放</div>
+          </div>`;
+        div.addEventListener("click", () => {
+          window.location.href = `player.html?url=${encodeURIComponent(v.url)}&title=${encodeURIComponent(v.name)}`;
+        });
+        gallery.appendChild(div);
       });
+    }
+
+    search.addEventListener("input", () => {
+      const key = search.value.trim().toLowerCase();
+      const filtered = videos.filter(v => v.name.toLowerCase().includes(key));
+      render(filtered);
     });
+
+    loadVideos();
   </script>
 </body>
 </html>
