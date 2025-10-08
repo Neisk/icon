@@ -1,13 +1,18 @@
 name: Auto Generate Video Thumbnails
 
+# 支持 push 自动触发 + 手动触发
 on:
   push:
+    branches:
+      - main
     paths:
       - 'mp4/**'
+  workflow_dispatch: # ✅ 手动运行选项
 
 jobs:
   thumbnails:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
