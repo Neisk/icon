@@ -1,157 +1,156 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neisk 视频库</title>
-  <style>
-    :root {
-      --bg: #0d0d0d;
-      --card: #1a1a1a;
-      --text: #f5f5f5;
-      --muted: #999;
-      --accent: #00b7ff;
-    }
-
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      text-align: center;
-      padding: 30px 15px 80px;
-    }
-
-    h1 {
-      font-size: 26px;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
-
-    input {
-      width: 90%;
-      max-width: 400px;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      background: #1f1f1f;
-      color: var(--text);
-      outline: none;
-      font-size: 15px;
-      margin-bottom: 25px;
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 20px;
-      max-width: 1200px;
-      margin: auto;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: 0.3s;
-      cursor: pointer;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    }
-
-    img {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
-      display: block;
-      background: #000;
-    }
-
-    .info {
-      padding: 10px 14px;
-      text-align: left;
-    }
-
-    .title {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .desc {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    footer {
-      margin-top: 50px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neisk 高级视频库</title>
+<style>
+:root{--bg:#0d0d0d;--card:#1a1a1a;--text:#f5f5f5;--muted:#999;--accent:#00b7ff;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+background-color:var(--bg);color:var(--text);text-align:center;padding:30px 15px 80px;}
+h1{font-size:26px;color:var(--accent);margin-bottom:10px;}
+#categories{margin-bottom:15px;}
+#categories button{margin:0 5px 10px 0;padding:5px 12px;border:none;border-radius:8px;background:#222;color:var(--text);cursor:pointer;}
+#categories button:hover{background:var(--accent);color:#000;}
+input{width:90%;max-width:400px;padding:10px;border-radius:10px;border:none;background:#1f1f1f;color:var(--text);
+outline:none;font-size:15px;margin-bottom:25px;}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;max-width:1200px;margin:auto;}
+.card{background:var(--card);border-radius:16px;overflow:hidden;transition:0.3s;cursor:pointer;}
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,0.3);}
+img{width:100%;height:160px;object-fit:cover;display:block;background:#000;}
+.info{padding:10px 14px;text-align:left;}
+.title{font-size:15px;font-weight:600;}
+.desc{font-size:12px;color:var(--muted);}
+#pagination{margin-top:20px;}
+#pagination button{margin:0 5px;padding:5px 12px;border:none;border-radius:8px;background:#222;color:var(--text);cursor:pointer;}
+#pagination button:hover{background:var(--accent);color:#000;}
+footer{margin-top:50px;font-size:12px;color:var(--muted);}
+</style>
 </head>
 <body>
-  <h1>🎥 Neisk 视频库</h1>
-  <input type="text" id="search" placeholder="🔍 搜索视频...">
+<h1>🎥 Neisk 高级视频库</h1>
+<div id="categories"></div>
+<input type="text" id="search" placeholder="🔍 搜索视频...">
+<div class="gallery" id="gallery">正在加载视频列表...</div>
+<div id="pagination"></div>
+<footer>© 2025 Neisk · 自动封面+分类+分页+大视频分段播放</footer>
 
-  <div class="gallery" id="gallery">正在加载视频列表...</div>
+<script>
+const repo="Neisk/icon"; 
+const folder="mp4";       
+const gallery=document.getElementById("gallery");
+const searchInput=document.getElementById("search");
+const categoryDiv=document.getElementById("categories");
+const paginationDiv=document.getElementById("pagination");
+let videos=[];  
+let filteredVideos=[]; 
+let currentPage=1;
+const pageSize=12;
 
-  <footer>© 2025 Neisk · 自动识别 GitHub 视频文件 · Powered by jsDelivr</footer>
+async function loadCategories(){
+  try{
+    const res=await fetch(`https://api.github.com/repos/${repo}/contents/${folder}`);
+    const data=await res.json();
+    const categories=data.filter(f=>f.type==="dir").map(f=>f.name);
+    categories.unshift("全部");
+    renderCategories(categories);
+    loadVideos("全部");
+  }catch(e){gallery.innerHTML="<p style='color:#f55'>❌ 分类加载失败</p>";}
+}
 
-  <script>
-    const repo = "Neisk/icon"; // ← 你的 GitHub 仓库名
-    const gallery = document.getElementById("gallery");
-    const search = document.getElementById("search");
-    let videos = [];
+function renderCategories(categories){
+  categoryDiv.innerHTML="";
+  categories.forEach(cat=>{
+    const btn=document.createElement("button");
+    btn.textContent=cat;
+    btn.onclick=()=>{currentPage=1; loadVideos(cat);}
+    categoryDiv.appendChild(btn);
+  });
+}
 
-    // 获取仓库文件列表
-    async function loadVideos() {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${repo}/contents/`);
-        const data = await res.json();
-        videos = data.filter(f => f.name.endsWith(".mp4") || f.name.endsWith(".mov"))
-                     .map(f => ({
-                       name: decodeURIComponent(f.name.replace(/\.[^/.]+$/, "")),
-                       url: `https://cdn.jsdelivr.net/gh/${repo}@main/${f.name}`,
-                       cover: `https://cdn.jsdelivr.net/gh/${repo}@main/${f.name.replace(/\.[^/.]+$/, ".jpg")}`
-                     }));
-        render(videos);
-      } catch (err) {
-        gallery.innerHTML = `<p style="color:#f55;">❌ 加载失败，请检查仓库名或 API 限制。</p>`;
-      }
-    }
+async function loadVideos(category="全部"){
+  let url=`https://api.github.com/repos/${repo}/contents/${folder}`;
+  if(category!=="全部") url+=`/${category}`;
+  try{
+    const res=await fetch(url);
+    const data=await res.json();
+    videos=data.filter(f=>f.type==="dir").map(f=>({
+      name:f.name,
+      folder:(category!=="全部"?folder+"/"+category+"/":"")+f.name
+    }));
+    filteredVideos=videos;
+    generateCoversPage();
+  }catch(e){gallery.innerHTML="<p style='color:#f55'>❌ 视频加载失败</p>";}
+}
 
-    function render(list) {
-      if(list.length === 0) {
-        gallery.innerHTML = "<p>📭 暂无视频</p>";
-        return;
-      }
-      gallery.innerHTML = "";
-      list.forEach((v, i) => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-          <img src="${v.cover}" onerror="this.src='https://via.placeholder.com/400x200?text=No+Cover';">
-          <div class="info">
-            <div class="title">${v.name}</div>
-            <div class="desc">点击播放</div>
-          </div>`;
-        div.addEventListener("click", () => {
-          window.location.href = `player.html?url=${encodeURIComponent(v.url)}&title=${encodeURIComponent(v.name)}`;
+function generateCoversPage(){
+  gallery.innerHTML="";
+  const start=(currentPage-1)*pageSize;
+  const pageVideos=filteredVideos.slice(start,start+pageSize);
+  if(pageVideos.length===0){gallery.innerHTML="<p>暂无视频</p>";return;}
+  pageVideos.forEach(v=>{
+    const card=document.createElement("div");
+    card.className="card";
+    const img=document.createElement("img");
+    img.src="https://via.placeholder.com/400x200?text=Loading...";
+    const info=document.createElement("div");
+    info.className="info";
+    info.innerHTML=`<div class="title">${v.name}</div><div class="desc">点击播放</div>`;
+    card.appendChild(img);
+    card.appendChild(info);
+    gallery.appendChild(card);
+
+    fetch(`https://api.github.com/repos/${repo}/contents/${v.folder}`)
+      .then(res=>res.json())
+      .then(parts=>{
+        const mp4Part=parts.filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov")).sort((a,b)=>a.name.localeCompare(b.name))[0];
+        if(!mp4Part) return;
+        const videoEl=document.createElement("video");
+        videoEl.src=`https://cdn.jsdelivr.net/gh/${repo}@main/${v.folder}/${mp4Part.name}`;
+        videoEl.crossOrigin="anonymous";
+        videoEl.muted=true;
+        videoEl.currentTime=0.1;
+        videoEl.addEventListener("loadeddata",()=>{
+          const canvas=document.createElement("canvas");
+          canvas.width=videoEl.videoWidth;
+          canvas.height=videoEl.videoHeight;
+          const ctx=canvas.getContext("2d");
+          ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+          img.src=canvas.toDataURL("image/jpeg");
         });
-        gallery.appendChild(div);
       });
-    }
 
-    search.addEventListener("input", () => {
-      const key = search.value.trim().toLowerCase();
-      const filtered = videos.filter(v => v.name.toLowerCase().includes(key));
-      render(filtered);
-    });
+    card.onclick=()=>{window.location.href=`player.html?folder=${v.folder}&title=${encodeURIComponent(v.name)}`;}
+  });
+  renderPagination();
+}
 
-    loadVideos();
-  </script>
+searchInput.addEventListener("input",()=>{
+  const key=searchInput.value.trim().toLowerCase();
+  filteredVideos=videos.filter(v=>v.name.toLowerCase().includes(key));
+  currentPage=1;
+  generateCoversPage();
+});
+
+function renderPagination(){
+  paginationDiv.innerHTML="";
+  const totalPage=Math.ceil(filteredVideos.length/pageSize);
+  if(totalPage<=1) return;
+  if(currentPage>1){
+    const prev=document.createElement("button");
+    prev.textContent="上一页";
+    prev.onclick=()=>{currentPage--; generateCoversPage();}
+    paginationDiv.appendChild(prev);
+  }
+  if(currentPage<totalPage){
+    const next=document.createElement("button");
+    next.textContent="下一页";
+    next.onclick=()=>{currentPage++; generateCoversPage();}
+    paginationDiv.appendChild(next);
+  }
+}
+
+loadCategories();
+</script>
 </body>
 </html>
