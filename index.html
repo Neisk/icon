@@ -8,40 +8,99 @@
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 background:#0d0d0d;color:#f5f5f5;text-align:center;padding:20px;}
 h1{color:#00b7ff;margin-bottom:20px;}
-ul{list-style:none;padding-left:0;}
-li{padding:10px 15px;margin:6px 0;background:#222;border-radius:8px;cursor:pointer;}
-li:hover{background:#00b7ff;color:#000;}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;max-width:1200px;margin:auto;}
+.card{background:#222;border-radius:12px;overflow:hidden;cursor:pointer;transition:0.2s;}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 15px rgba(0,0,0,0.3);}
+.card img{width:100%;height:120px;object-fit:cover;background:#000;}
+.card .title{padding:6px 8px;font-size:14px;font-weight:600;}
+#pagination{margin-top:20px;}
+#pagination button{margin:0 5px;padding:6px 12px;border:none;border-radius:8px;background:#222;color:#fff;cursor:pointer;}
+#pagination button:hover{background:#00b7ff;color:#000;}
 </style>
 </head>
 <body>
 <h1>📺 视频库 - 其他</h1>
-<ul id="videoList">正在加载视频...</ul>
+<div class="gallery" id="gallery">正在加载视频...</div>
+<div id="pagination"></div>
 
 <script>
 const folder = "mp4/其他";
-const list = document.getElementById("videoList");
+const gallery = document.getElementById("gallery");
+const paginationDiv = document.getElementById("pagination");
+let videos = [];
+let currentPage = 1;
+const pageSize = 6;
 
-// 获取“其他”文件夹下的所有视频
+// 获取文件夹下所有视频
 fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
   .then(res=>res.json())
   .then(data=>{
-    const videos = data.filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov"))
-      .sort((a,b)=>a.name.localeCompare(b.name));
-    list.innerHTML="";
-    videos.forEach(v=>{
-      const li = document.createElement("li");
-      li.textContent = v.name;
-      li.onclick = ()=> {
-        const url = encodeURIComponent(v.name);
-        window.location.href = `player.html?folder=${folder}&title=${url}`;
-      }
-      list.appendChild(li);
-    });
+    videos = data.filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov"))
+      .map(f=>({
+        name: f.name,
+        url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${encodeURIComponent(f.name)}`
+      }));
+    renderGallery();
+    renderPagination();
   })
   .catch(e=>{
-    list.innerHTML="<li>❌ 视频加载失败</li>";
+    gallery.innerHTML="❌ 视频加载失败";
     console.error(e);
   });
+
+// 渲染当前页
+function renderGallery(){
+  gallery.innerHTML="";
+  const start = (currentPage-1)*pageSize;
+  const pageVideos = videos.slice(start,start+pageSize);
+  pageVideos.forEach(v=>{
+    const card = document.createElement("div");
+    card.className="card";
+
+    const img = document.createElement("img");
+    // 封面自动抓取首帧
+    const videoEl = document.createElement("video");
+    videoEl.src=v.url;
+    videoEl.muted=true;
+    videoEl.currentTime=0.1;
+    videoEl.addEventListener("loadeddata",()=>{
+      const canvas=document.createElement("canvas");
+      canvas.width=videoEl.videoWidth;
+      canvas.height=videoEl.videoHeight;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+      img.src=canvas.toDataURL("image/jpeg");
+    });
+
+    const title = document.createElement("div");
+    title.className="title";
+    title.textContent=v.name;
+
+    card.appendChild(img);
+    card.appendChild(title);
+    card.onclick=()=>window.location.href=`player.html?folder=${folder}&title=${encodeURIComponent(v.name)}`;
+    gallery.appendChild(card);
+  });
+}
+
+// 分页
+function renderPagination(){
+  paginationDiv.innerHTML="";
+  const totalPage = Math.ceil(videos.length/pageSize);
+  if(totalPage<=1) return;
+  if(currentPage>1){
+    const prev=document.createElement("button");
+    prev.textContent="上一页";
+    prev.onclick=()=>{currentPage--; renderGallery(); renderPagination();}
+    paginationDiv.appendChild(prev);
+  }
+  if(currentPage<totalPage){
+    const next=document.createElement("button");
+    next.textContent="下一页";
+    next.onclick=()=>{currentPage++; renderGallery(); renderPagination();}
+    paginationDiv.appendChild(next);
+  }
+}
 </script>
 </body>
 </html>
