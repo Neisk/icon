@@ -24,7 +24,6 @@
       min-height: 100vh;
     }
 
-    /* 顶部导航栏 */
     header {
       width: 100%;
       display: flex;
@@ -55,9 +54,7 @@
       transition: color 0.2s;
     }
 
-    nav a:hover {
-      color: var(--accent);
-    }
+    nav a:hover { color: var(--accent); }
 
     main {
       flex: 1;
@@ -67,19 +64,8 @@
       padding: 50px 20px 100px;
     }
 
-    h1 {
-      font-size: 28px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-
-    p.subtitle {
-      color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 40px;
-      text-align: center;
-    }
+    h1 { font-size: 28px; font-weight: 600; margin-bottom: 10px; text-align: center; }
+    p.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 40px; text-align: center; }
 
     .gallery {
       display: grid;
@@ -103,36 +89,13 @@
       box-shadow: 0 0 25px rgba(255,255,255,0.1);
     }
 
-    .video-card img {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
-    }
+    .video-card img { width: 100%; height: 160px; object-fit: cover; }
+    .video-info { padding: 12px 16px; }
+    .video-info h3 { font-size: 16px; margin: 0 0 6px; color: var(--text); }
+    .video-info p { font-size: 13px; color: var(--muted); margin: 0; }
 
-    .video-info {
-      padding: 12px 16px;
-    }
+    footer { padding: 20px; color: #666; font-size: 12px; text-align: center; }
 
-    .video-info h3 {
-      font-size: 16px;
-      margin: 0 0 6px;
-      color: var(--text);
-    }
-
-    .video-info p {
-      font-size: 13px;
-      color: var(--muted);
-      margin: 0;
-    }
-
-    footer {
-      padding: 20px;
-      color: #666;
-      font-size: 12px;
-      text-align: center;
-    }
-
-    /* 播放弹窗 */
     .player-modal {
       display: none;
       position: fixed;
@@ -143,9 +106,7 @@
       z-index: 200;
     }
 
-    .player-modal.active {
-      display: flex;
-    }
+    .player-modal.active { display: flex; }
 
     .player {
       max-width: 90%;
@@ -187,9 +148,7 @@
     <h1>🎞️ Neisk 视频画廊</h1>
     <p class="subtitle">点击任意缩略图即可在线播放</p>
 
-    <div class="gallery" id="gallery">
-      <!-- JS 自动填充视频卡片 -->
-    </div>
+    <div class="gallery" id="gallery"></div>
   </main>
 
   <div class="player-modal" id="playerModal">
@@ -202,58 +161,74 @@
   <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
   <script>
-    // ======== 视频列表 ========
-    const videos = [
-      {
-        title: "湖边日落剪影",
-        desc: "静谧的湖边，夕阳洒落波光粼粼的水面。",
-        cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/cover.jpg",
-        src: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/5237860479018326383.mp4"
-      },
-      {
-        title: "夜幕下的城市",
-        desc: "灯火阑珊的街头，霓虹闪烁的都市。",
-        cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/city.jpg",
-        src: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/city.mp4"
-      },
-      {
-        title: "海浪与清晨",
-        desc: "海浪轻拍沙滩，晨光穿透薄雾。",
-        cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/sea.jpg",
-        src: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/sea.mp4"
-      }
-    ];
-
-    // ======== 页面逻辑 ========
+    const folder = "mp4"; // 所有视频文件夹
     const gallery = document.getElementById("gallery");
     const modal = document.getElementById("playerModal");
     const videoPlayer = document.getElementById("videoPlayer");
     const closeBtn = document.getElementById("closeBtn");
 
-    videos.forEach(v => {
-      const card = document.createElement("div");
-      card.className = "video-card";
-      card.innerHTML = `
-        <img src="${v.cover}" alt="${v.title}">
-        <div class="video-info">
-          <h3>${v.title}</h3>
-          <p>${v.desc}</p>
-        </div>
-      `;
-      card.addEventListener("click", () => {
-        videoPlayer.src = v.src;
-        modal.classList.add("active");
-        videoPlayer.play();
-      });
-      gallery.appendChild(card);
-    });
+    // 获取 mp4 文件夹下所有视频
+    fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
+      .then(res => res.json())
+      .then(data => {
+        const videos = data.filter(f => f.name.endsWith(".mp4") || f.name.endsWith(".mov"))
+          .map(f => ({
+            title: f.name,
+            desc: "",
+            cover: "default_cover.jpg", // 默认封面
+            src: `https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${encodeURIComponent(f.name)}`
+          }));
 
+        videos.forEach(v => {
+          const card = document.createElement("div");
+          card.className = "video-card";
+          card.innerHTML = `
+            <img src="${v.cover}" alt="${v.title}">
+            <div class="video-info">
+              <h3>${v.title}</h3>
+              <p>${v.desc}</p>
+            </div>
+          `;
+
+          // 点击播放
+          card.addEventListener("click", () => {
+            videoPlayer.src = v.src;
+            modal.classList.add("active");
+            videoPlayer.play();
+          });
+
+          gallery.appendChild(card);
+
+          // 封面抓取首帧
+          const videoEl = document.createElement("video");
+          videoEl.src = v.src;
+          videoEl.muted = true;
+          videoEl.currentTime = 0.1;
+          videoEl.addEventListener("loadeddata", () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = videoEl.videoWidth;
+              canvas.height = videoEl.videoHeight;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+              card.querySelector("img").src = canvas.toDataURL("image/jpeg");
+            } catch (e) {
+              console.warn("封面生成失败", e);
+            }
+          });
+        });
+      })
+      .catch(err => {
+        gallery.innerHTML = "❌ 视频加载失败";
+        console.error(err);
+      });
+
+    // 关闭弹窗
     closeBtn.addEventListener("click", () => {
       modal.classList.remove("active");
       videoPlayer.pause();
       videoPlayer.src = "";
     });
-
     modal.addEventListener("click", (e) => {
       if (e.target === modal) {
         modal.classList.remove("active");
