@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nisc | 文件画廊</title>
+<title>Nisc | 多媒体画廊</title>
 <style>
 :root{
   --bg:#0d0d0d;
@@ -24,7 +24,8 @@ body{
   align-items:center;
   padding:40px 20px 120px;
 }
-h1{font-size:28px;font-weight:600;margin-bottom:30px;text-align:center;color:var(--accent);}
+h1{font-size:28px;font-weight:600;margin-bottom:20px;text-align:center;color:var(--accent);}
+h2{font-size:22px;margin:30px 0 15px;color:var(--accent);}
 .gallery{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
@@ -32,7 +33,7 @@ h1{font-size:28px;font-weight:600;margin-bottom:30px;text-align:center;color:var
   width:100%;
   max-width:1100px;
 }
-.video-card{
+.card{
   background:var(--card);
   border-radius:16px;
   overflow:hidden;
@@ -43,10 +44,11 @@ h1{font-size:28px;font-weight:600;margin-bottom:30px;text-align:center;color:var
   display:flex;
   flex-direction:column;
   align-items:center;
+  text-align:center;
 }
-.video-card:hover{transform:translateY(-4px);box-shadow:0 0 25px rgba(255,255,255,0.1);}
-.video-card img, .video-card video{width:100%;height:160px;object-fit:cover;border-radius:10px;}
-.video-card a{text-decoration:none;color:var(--text);margin-top:8px;font-size:14px;word-break:break-all;text-align:center;}
+.card:hover{transform:translateY(-4px);box-shadow:0 0 25px rgba(255,255,255,0.1);}
+.card img, .card video{width:100%;height:160px;object-fit:cover;border-radius:10px;}
+.card a{text-decoration:none;color:var(--text);margin-top:8px;font-size:14px;word-break:break-all;}
 footer{
   padding:20px;
   color:#666;
@@ -60,7 +62,7 @@ footer{
   backdrop-filter:blur(10px);
 }
 .pagination{
-  margin-top:30px;
+  margin-top:20px;
   display:flex;
   gap:6px;
   flex-wrap:wrap;
@@ -78,100 +80,182 @@ footer{
 .pagination button:hover{background:var(--accent);color:#000;}
 .pagination button.active{background:var(--accent);color:#000;font-weight:bold;}
 .pagination button:disabled{opacity:.5;cursor:not-allowed;}
+
+/* 视频弹窗 */
+.player-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  justify-content:center;
+  align-items:center;
+  z-index:200;
+}
+.player-modal.active{display:flex;}
+.player{
+  max-width:90%;
+  width:800px;
+  border-radius:16px;
+  overflow:hidden;
+  background:#000;
+  box-shadow:0 0 30px rgba(255,255,255,0.1);
+}
+.close-btn{
+  position:absolute;
+  top:30px;
+  right:40px;
+  font-size:28px;
+  color:#fff;
+  cursor:pointer;
+  font-weight:300;
+}
 </style>
 </head>
 <body>
-<h1>🎞️ Nisc 文件画廊</h1>
-<div class="gallery" id="gallery"></div>
-<div class="pagination" id="pagination"></div>
+<h1>🎞️ Nisc 多媒体画廊</h1>
+
+<h2>视频画廊</h2>
+<div class="gallery" id="videoGallery"></div>
+<div class="pagination" id="videoPagination"></div>
+
+<h2>文件画廊</h2>
+<div class="gallery" id="fileGallery"></div>
+<div class="pagination" id="filePagination"></div>
+
+<!-- 视频弹窗 -->
+<div class="player-modal" id="playerModal">
+  <span class="close-btn" id="closeBtn">×</span>
+  <div class="player">
+    <video id="videoPlayer" controls playsinline preload="metadata" width="100%"></video>
+  </div>
+</div>
+
 <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
 <script>
-const gallery = document.getElementById("gallery");
-const paginationEl = document.getElementById("pagination");
-const pageSize = 6;
-let currentPage = 1;
-let files = [];
+const videoFolder="mp4";
+const fileFolder="share";
+const videoGallery=document.getElementById("videoGallery");
+const fileGallery=document.getElementById("fileGallery");
+const videoPaginationEl=document.getElementById("videoPagination");
+const filePaginationEl=document.getElementById("filePagination");
+const pageSize=6;
+let videoFiles=[], fileFiles=[];
+let videoPage=1, filePage=1;
 
-// 视频文件夹
-const videoFolder = "mp4";
-// 其他文件夹
-const shareFolder = "share";
+// 弹窗元素
+const modal=document.getElementById("playerModal");
+const videoPlayer=document.getElementById("videoPlayer");
+const closeBtn=document.getElementById("closeBtn");
+closeBtn.addEventListener("click",closeModal);
+modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(); });
+function closeModal(){ modal.classList.remove("active"); videoPlayer.pause(); videoPlayer.src=""; }
 
-// 获取 GitHub 文件列表
-async function loadFiles() {
-  const videoRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${videoFolder}`);
-  const videoData = await videoRes.json();
-  const shareRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${shareFolder}`);
-  const shareData = await shareRes.json();
+// 图标
+const icons={
+  text:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/txt.png",
+  apk:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/apk.png",
+  zip:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/zip.png",
+  pdf:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/pdf.png",
+  other:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/file.png"
+};
 
-  const videoFiles = videoData.filter(f => /\.(mp4|mov)$/i.test(f.name)).map(f=>{
-    return {
-      name: f.name,
-      type: 'video',
-      url: `https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/${encodeURIComponent(f.name)}`,
-      thumb: `https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/thumbnails/${encodeURIComponent(f.name)}.jpg`
-    };
-  });
+// 加载文件
+async function loadFiles(){
+  const vRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${videoFolder}`);
+  const vData = await vRes.json();
+  const fRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${fileFolder}`);
+  const fData = await fRes.json();
 
-  const otherFiles = shareData.map(f=>{
-    const ext = f.name.split('.').pop().toLowerCase();
+  videoFiles = vData.filter(f=>/\.(mp4|mov)$/i.test(f.name)).map(f=>({
+    name:f.name,
+    url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/${encodeURIComponent(f.name)}`,
+    thumb:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/thumbnails/${encodeURIComponent(f.name)}.jpg`
+  }));
+
+  fileFiles = fData.map(f=>{
+    const ext=f.name.split('.').pop().toLowerCase();
     let type='other';
     if(['jpg','png','jpeg','gif'].includes(ext)) type='image';
     else if(['txt'].includes(ext)) type='text';
+    else if(['apk'].includes(ext)) type='apk';
+    else if(['zip'].includes(ext)) type='zip';
+    else if(['pdf'].includes(ext)) type='pdf';
     return {
-      name: f.name,
-      type: type,
-      url: `https://cdn.jsdelivr.net/gh/Neisk/icon@main/${shareFolder}/${encodeURIComponent(f.name)}`
+      name:f.name,
+      type:type,
+      url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${fileFolder}/${encodeURIComponent(f.name)}`
     };
   });
 
-  files = [...videoFiles, ...otherFiles];
-  renderPage(currentPage);
+  renderVideoPage(videoPage);
+  renderFilePage(filePage);
 }
 
-// 渲染页面
-function renderPage(page){
-  gallery.innerHTML='';
-  const start = (page-1)*pageSize;
-  const end = start+pageSize;
-  const pageFiles = files.slice(start,end);
-
+// 渲染视频画廊
+function renderVideoPage(page){
+  videoGallery.innerHTML='';
+  const start=(page-1)*pageSize;
+  const end=start+pageSize;
+  const pageFiles=videoFiles.slice(start,end);
   pageFiles.forEach(f=>{
-    const card = document.createElement('div');
-    card.className='video-card';
-
-    if(f.type==='video'){
-      card.innerHTML = `<img src="${f.thumb}" alt="${f.name}"><a>${f.name}</a>`;
-      card.addEventListener("click", ()=>{ window.open(f.url,"_blank"); });
-    } else if(f.type==='image'){
-      card.innerHTML = `<img src="${f.url}" alt="${f.name}"><a>${f.name}</a>`;
-    } else if(f.type==='text'){
-      card.innerHTML = `<a href="${f.url}" target="_blank">📄 ${f.name}</a>`;
-    } else{
-      card.innerHTML = `<a href="${f.url}" download>⬇️ ${f.name}</a>`;
-    }
-
-    gallery.appendChild(card);
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<img src="${f.thumb}" alt="${f.name}"><a>${f.name}</a>`;
+    card.addEventListener("click",()=>{
+      videoPlayer.src=f.url;
+      modal.classList.add("active");
+      videoPlayer.play();
+    });
+    videoGallery.appendChild(card);
   });
-  renderPagination();
+  renderPagination(videoPaginationEl,videoFiles.length,videoPage,(p)=>{ videoPage=p; renderVideoPage(videoPage); });
 }
 
-// 渲染分页
-function renderPagination(){
-  paginationEl.innerHTML='';
-  const totalPages = Math.ceil(files.length/pageSize);
-  const createBtn = (text,page,active=false,disabled=false)=>{
-    const btn = document.createElement("button");
-    btn.textContent = text;
+// 渲染文件画廊
+function renderFilePage(page){
+  fileGallery.innerHTML='';
+  const start=(page-1)*pageSize;
+  const end=start+pageSize;
+  const pageFiles=fileFiles.slice(start,end);
+  pageFiles.forEach(f=>{
+    const card=document.createElement('div');
+    card.className='card';
+    let thumb="";
+    if(f.type==='image'){
+      thumb=f.url;
+    } else{
+      thumb = icons[f.type] || icons['other'];
+    }
+    let content="";
+    if(f.type==='image'){
+      content=`<img src="${thumb}" alt="${f.name}"><a>${f.name}</a>`;
+    } else if(f.type==='text'){
+      content=`<img src="${thumb}" alt="${f.name}"><a href="${f.url}" target="_blank">${f.name}</a>`;
+    } else{
+      content=`<img src="${thumb}" alt="${f.name}"><a href="${f.url}" download>${f.name}</a>`;
+    }
+    card.innerHTML=content;
+    fileGallery.appendChild(card);
+  });
+  renderPagination(filePaginationEl,fileFiles.length,filePage,(p)=>{ filePage=p; renderFilePage(filePage); });
+}
+
+// 通用分页渲染
+function renderPagination(container,totalItems,current,callback){
+  container.innerHTML='';
+  const totalPages=Math.ceil(totalItems/pageSize);
+  const createBtn=(text,page,active=false,disabled=false)=>{
+    const btn=document.createElement("button");
+    btn.textContent=text;
     if(active) btn.classList.add("active");
     btn.disabled = disabled;
-    btn.addEventListener("click", ()=>{ currentPage=page; renderPage(currentPage); });
+    btn.addEventListener("click",()=>{ callback(page); });
     return btn;
   };
-  paginationEl.appendChild(createBtn("上一页",currentPage-1,false,currentPage===1));
-  for(let i=1;i<=totalPages;i++) paginationEl.appendChild(createBtn(i,i,currentPage===i));
-  paginationEl.appendChild(createBtn("下一页",currentPage+1,false,currentPage===totalPages));
+  container.appendChild(createBtn("上一页",current-1,false,current===1));
+  for(let i=1;i<=totalPages;i++) container.appendChild(createBtn(i,i,current===i));
+  container.appendChild(createBtn("下一页",current+1,false,current===totalPages));
 }
 
 // 初始化
