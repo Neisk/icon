@@ -1,1 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>视频播放 | Neisk</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    video {
+      width: 100%;
+      max-width: 900px;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.6);
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 10px 0;
+      text-align: center;
+    }
+    a {
+      color: #00b7ff;
+      font-size: 14px;
+      text-decoration: none;
+      margin-top: 20px;
+    }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <video id="player" controls autoplay playsinline></video>
+  <h1 id="title"></h1>
+  <a href="index.html">← 返回视频库</a>
 
+  <script>
+    const params = new URLSearchParams(location.search);
+    const url = params.get("url");
+    const title = params.get("title");
+
+    if (!url) {
+      document.body.innerHTML = "<h1>⚠️ 视频地址错误</h1>";
+    } else {
+      document.getElementById("player").src = url;
+      document.getElementById("title").innerText = decodeURIComponent(title);
+    }
+  </script>
+</body>
+</html>
