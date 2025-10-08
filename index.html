@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>视频播放 | Neisk</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    h2 {
+      font-weight: 500;
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #ddd;
+      text-align: center;
+    }
+
+    video {
+      width: 90%;
+      max-width: 900px;
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 20px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      h2 {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>5237860479018326383.mp4</h2>
+  <video controls preload="metadata" poster="" playsinline>
+    <source src="https://cdn.jsdelivr.net/gh/Neisk/icon@main/5237860479018326383.mp4" type="video/mp4">
+    您的浏览器不支持视频播放。
+  </video>
+  <footer>© 2025 Neisk · 视频播放页面</footer>
+</body>
+</html>
