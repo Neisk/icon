@@ -26,6 +26,19 @@ body{
 }
 h1{font-size:28px;font-weight:600;margin-bottom:20px;text-align:center;color:var(--accent);}
 h2{font-size:22px;margin:30px 0 15px;color:var(--accent);}
+.search-box{
+  margin-bottom:20px;
+  display:flex;
+  justify-content:center;
+}
+.search-box input{
+  padding:8px 12px;
+  width:300px;
+  border-radius:6px;
+  border:none;
+  outline:none;
+  font-size:14px;
+}
 .gallery{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
@@ -114,11 +127,15 @@ footer{
 <body>
 <h1>🎞️ Nisc 多媒体画廊</h1>
 
-<h2>视频画廊</h2>
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="搜索视频或文件名称..." />
+</div>
+
+<h2>视频分享</h2>
 <div class="gallery" id="videoGallery"></div>
 <div class="pagination" id="videoPagination"></div>
 
-<h2>文件画廊</h2>
+<h2>文件分享</h2>
 <div class="gallery" id="fileGallery"></div>
 <div class="pagination" id="filePagination"></div>
 
@@ -139,6 +156,7 @@ const videoGallery=document.getElementById("videoGallery");
 const fileGallery=document.getElementById("fileGallery");
 const videoPaginationEl=document.getElementById("videoPagination");
 const filePaginationEl=document.getElementById("filePagination");
+const searchInput=document.getElementById("searchInput");
 const pageSize=6;
 let videoFiles=[], fileFiles=[];
 let videoPage=1, filePage=1;
@@ -173,12 +191,22 @@ async function loadFiles(){
   renderFilePage(filePage);
 }
 
+// 搜索过滤
+function filterFiles(keyword){
+  const lower = keyword.toLowerCase();
+  return {
+    videos: videoFiles.filter(f=>f.name.toLowerCase().includes(lower)),
+    files: fileFiles.filter(f=>f.name.toLowerCase().includes(lower))
+  };
+}
+
 // 渲染视频画廊
-function renderVideoPage(page){
+function renderVideoPage(page, filteredList=null){
+  const list = filteredList || videoFiles;
   videoGallery.innerHTML='';
   const start=(page-1)*pageSize;
   const end=start+pageSize;
-  const pageFiles=videoFiles.slice(start,end);
+  const pageFiles=list.slice(start,end);
   pageFiles.forEach(f=>{
     const card=document.createElement('div');
     card.className='card';
@@ -190,15 +218,16 @@ function renderVideoPage(page){
     });
     videoGallery.appendChild(card);
   });
-  renderPagination(videoPaginationEl,videoFiles.length,videoPage,(p)=>{ videoPage=p; renderVideoPage(videoPage); });
+  renderPagination(videoPaginationEl,list.length,videoPage,(p)=>{ videoPage=p; renderVideoPage(videoPage, list); });
 }
 
 // 渲染文件画廊（文字列表）
-function renderFilePage(page){
+function renderFilePage(page, filteredList=null){
+  const list = filteredList || fileFiles;
   fileGallery.innerHTML='';
   const start=(page-1)*pageSize;
   const end=start+pageSize;
-  const pageFiles=fileFiles.slice(start,end);
+  const pageFiles=list.slice(start,end);
   pageFiles.forEach(f=>{
     const card=document.createElement('div');
     card.className='card';
@@ -207,7 +236,7 @@ function renderFilePage(page){
     card.innerHTML=`<a href="${f.url}" target="_blank">${f.name}</a>`;
     fileGallery.appendChild(card);
   });
-  renderPagination(filePaginationEl,fileFiles.length,filePage,(p)=>{ filePage=p; renderFilePage(filePage); });
+  renderPagination(filePaginationEl,list.length,filePage,(p)=>{ filePage=p; renderFilePage(filePage, list); });
 }
 
 // 通用分页渲染
@@ -226,6 +255,14 @@ function renderPagination(container,totalItems,current,callback){
   for(let i=1;i<=totalPages;i++) container.appendChild(createBtn(i,i,current===i));
   container.appendChild(createBtn("下一页",current+1,false,current===totalPages));
 }
+
+// 搜索输入事件
+searchInput.addEventListener("input",()=>{
+  videoPage=1; filePage=1;
+  const filtered=filterFiles(searchInput.value);
+  renderVideoPage(videoPage, filtered.videos);
+  renderFilePage(filePage, filtered.files);
+});
 
 // 初始化
 loadFiles();
