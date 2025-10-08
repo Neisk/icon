@@ -1,57 +1,130 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>视频播放 | Neisk</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    video {
-      width: 100%;
-      max-width: 900px;
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.6);
-      margin-bottom: 10px;
-    }
-    h1 {
-      font-size: 20px;
-      margin: 10px 0;
-      text-align: center;
-    }
-    a {
-      color: #00b7ff;
-      font-size: 14px;
-      text-decoration: none;
-      margin-top: 20px;
-    }
-    a:hover { text-decoration: underline; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频播放 | Neisk</title>
+<style>
+body{margin:0;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+display:flex;flex-direction:column;align-items:center;padding:20px;}
+video{width:100%;max-width:900px;border-radius:12px;box-shadow:0 0 30px rgba(0,0,0,0.6);margin-bottom:10px;background:#000;}
+h1{font-size:20px;margin:10px 0;text-align:center;}
+#info{font-size:14px;margin:5px 0;color:#00b7ff;}
+#segments{margin-top:10px;display:flex;flex-wrap:wrap;justify-content:center;}
+#segments button{margin:3px;padding:5px 10px;border:none;border-radius:8px;background:#222;color:#fff;cursor:pointer;}
+#segments button.active{background:#00b7ff;color:#000;}
+#segments button:hover{background:#555;}
+a{color:#00b7ff;font-size:14px;text-decoration:none;margin-top:15px;}
+a:hover{text-decoration:underline;}
+#loading{color:#00b7ff;margin-top:5px;}
+</style>
 </head>
 <body>
-  <video id="player" controls autoplay playsinline></video>
-  <h1 id="title"></h1>
-  <a href="index.html">← 返回视频库</a>
+<h1 id="title"></h1>
+<video id="player" controls autoplay playsinline preload="auto"></video>
+<div id="info">00:00:00 / 00:00:00 | 第0段 / 共0段</div>
+<div id="segments"></div>
+<div id="loading">正在加载视频...</div>
+<a href="index.html">← 返回视频库</a>
 
-  <script>
-    const params = new URLSearchParams(location.search);
-    const url = params.get("url");
-    const title = params.get("title");
+<script>
+const params=new URLSearchParams(location.search);
+const folder=params.get("folder");  
+const title=params.get("title");    
+const player=document.getElementById("player");
+const loading=document.getElementById("loading");
+const info=document.getElementById("info");
+const segmentsDiv=document.getElementById("segments");
 
-    if (!url) {
-      document.body.innerHTML = "<h1>⚠️ 视频地址错误</h1>";
-    } else {
-      document.getElementById("player").src = url;
-      document.getElementById("title").innerText = decodeURIComponent(title);
+if(!folder){
+  document.body.innerHTML="<h1>⚠️ 视频地址错误</h1>";
+}else{
+  document.getElementById("title").innerText=decodeURIComponent(title);
+
+  let partIndex=0;
+  let videoParts=[];   
+  let partDurations=[]; 
+  let totalDuration=0;
+
+  fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
+    .then(res=>res.json())
+    .then(data=>{
+      videoParts=data.filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov"))
+        .sort((a,b)=>a.name.localeCompare(b.name))
+        .map(f=>`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${f.name}`);
+      if(videoParts.length===0) throw "没有视频文件";
+      loadDurations(0);
+      renderSegments();
+    }).catch(e=>loading.innerText="❌ 视频加载失败");
+
+  function loadDurations(index){
+    if(index>=videoParts.length){
+      totalDuration = partDurations.reduce((a,b)=>a+b,0);
+      playPart(0);
+      return;
     }
-  </script>
+    const v=document.createElement("video");
+    v.src=videoParts[index];
+    v.addEventListener("loadedmetadata",()=>{
+      partDurations[index]=v.duration;
+      loadDurations(index+1);
+    });
+    v.addEventListener("error",()=>{
+      partDurations[index]=0;
+      loadDurations(index+1);
+    });
+  }
+
+  function playPart(index){
+    if(index<0 || index>=videoParts.length) return;
+    partIndex=index;
+    updateSegmentButtons();
+    loading.style.display="block";
+    player.src=videoParts[index];
+    player.play();
+  }
+
+  function updateSegmentButtons(){
+    Array.from(segmentsDiv.children).forEach((btn,i)=>{
+      btn.classList.toggle("active",i===partIndex);
+    });
+  }
+
+  function renderSegments(){
+    segmentsDiv.innerHTML="";
+    videoParts.forEach((v,i)=>{
+      const btn=document.createElement("button");
+      btn.textContent=`段${i+1}`;
+      btn.onclick=()=>playPart(i);
+      segmentsDiv.appendChild(btn);
+    });
+  }
+
+  function formatTime(seconds){
+    const h=Math.floor(seconds/3600);
+    const m=Math.floor((seconds%3600)/60);
+    const s=Math.floor(seconds%60);
+    return [h,m,s].map(n=>n.toString().padStart(2,'0')).join(':');
+  }
+
+  function updateInfo(){
+    const elapsedBefore = partDurations.slice(0,partIndex).reduce((a,b)=>a+b,0);
+    const current = player.currentTime;
+    info.textContent = `${formatTime(elapsedBefore+current)} / ${formatTime(totalDuration)} | 第${partIndex+1}段 / 共${videoParts.length}段`;
+  }
+
+  player.addEventListener("timeupdate",updateInfo);
+  player.addEventListener("canplay",()=>{loading.style.display="none";updateInfo();});
+  player.addEventListener("waiting",()=>{loading.style.display="block";});
+  player.addEventListener("error",()=>{
+    loading.innerText="❌ 视频加载失败，尝试重新加载...";
+    setTimeout(()=>{player.load();},2000);
+  });
+
+  player.addEventListener("ended",()=>{
+    if(partIndex<videoParts.length-1) playPart(partIndex+1);
+  });
+}
+</script>
 </body>
 </html>
