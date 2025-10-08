@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neisk 智能视频库</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neisk 视频库</title>
   <style>
     :root {
       --bg: #0d0d0d;
@@ -62,7 +62,7 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
 
-    img, video {
+    img {
       width: 100%;
       height: 160px;
       object-fit: cover;
@@ -93,7 +93,7 @@
   </style>
 </head>
 <body>
-  <h1>🎥 Neisk 智能视频库</h1>
+  <h1>🎥 Neisk 视频库</h1>
   <input type="text" id="search" placeholder="🔍 搜索视频...">
 
   <div class="gallery" id="gallery">正在加载视频列表...</div>
@@ -101,12 +101,12 @@
   <footer>© 2025 Neisk · 自动识别 GitHub 视频文件 · Powered by jsDelivr</footer>
 
   <script>
-    const repo = "Neisk/icon"; // ← 你的 GitHub 仓库名（格式：用户名/仓库名）
+    const repo = "Neisk/icon"; // ← 你的 GitHub 仓库名
     const gallery = document.getElementById("gallery");
     const search = document.getElementById("search");
     let videos = [];
 
-    // 从 GitHub API 获取文件列表
+    // 获取仓库文件列表
     async function loadVideos() {
       try {
         const res = await fetch(`https://api.github.com/repos/${repo}/contents/`);
@@ -124,12 +124,12 @@
     }
 
     function render(list) {
-      if (list.length === 0) {
+      if(list.length === 0) {
         gallery.innerHTML = "<p>📭 暂无视频</p>";
         return;
       }
       gallery.innerHTML = "";
-      list.forEach(v => {
+      list.forEach((v, i) => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
