@@ -1,77 +1,36 @@
-name: 自动生成视频缩略图与文件列表
+name: Generate Thumbnails
 
 on:
   push:
     paths:
       - 'mp4/**'
-      - 'share/**'
-  workflow_dispatch: # 可手动触发
+  workflow_dispatch: # 支持手动触发
 
 jobs:
-  generate:
+  generate-thumbnails:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout 仓库
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: 安装 ffmpeg
-        run: |
-          sudo apt update
-          sudo apt install -y ffmpeg jq
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
 
-      - name: 创建缩略图文件夹
-        run: mkdir -p mp4/thumbnails
+    - name: Install dependencies
+      run: |
+        npm install fluent-ffmpeg @ffmpeg-installer/ffmpeg
 
-      - name: 生成视频缩略图
-        run: |
-          for f in mp4/*.{mp4,mov}; do
-            [ -f "$f" ] || continue
-            filename=$(basename "$f")
-            thumb="mp4/thumbnails/${filename}.jpg"
-            if [ ! -f "$thumb" ]; then
-              ffmpeg -i "$f" -ss 00:00:01 -vframes 1 "$thumb"
-            fi
-          done
+    - name: Generate thumbnails
+      run: |
+        node .github/scripts/generate_thumbnails.js
 
-      - name: 生成视频 JSON
-        run: |
-          echo "[" > video.json
-          first=true
-          for f in mp4/*.{mp4,mov}; do
-            [ -f "$f" ] || continue
-            filename=$(basename "$f")
-            url="https://cdn.jsdelivr.net/gh/${{ github.repository }}/mp4/$(echo $filename | jq -sRr @uri)"
-            thumb="https://cdn.jsdelivr.net/gh/${{ github.repository }}/mp4/thumbnails/$(echo $filename | jq -sRr @uri).jpg"
-            if [ "$first" = true ]; then
-              first=false
-            else
-              echo "," >> video.json
-            fi
-            echo "{\"name\":\"$filename\",\"url\":\"$url\",\"thumb\":\"$thumb\"}" >> video.json
-          done
-          echo "]" >> video.json
-
-      - name: 生成文件 JSON
-        run: |
-          echo "[" > file.json
-          first=true
-          for f in share/*; do
-            [ -f "$f" ] || continue
-            filename=$(basename "$f")
-            url="https://cdn.jsdelivr.net/gh/${{ github.repository }}/share/$(echo $filename | jq -sRr @uri)"
-            if [ "$first" = true ]; then
-              first=false
-            else
-              echo "," >> file.json
-            fi
-            echo "{\"name\":\"$filename\",\"url\":\"$url\"}" >> file.json
-          done
-          echo "]" >> file.json
-
-      - name: 提交 JSON 文件
-        uses: EndBug/add-and-commit@v9
-        with:
-          author_name: github-actions
-          author_email: github-actions@github.com
-          message: "自动更新视频缩略图与文件列表"
-          add: "video.json file.json mp4/thumbnails/*"
+    - name: Commit & Push Thumbnails
+      run: |
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git add mp4/thumbnails/*
+        git commit -m "Add/update video thumbnails" || echo "No changes to commit"
+        git push
