@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>播放视频</title>
+<title>视频播放</title>
 <style>
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0d0d0d;color:#f5f5f5;text-align:center;padding:20px;}
 h1{color:#00b7ff;margin-bottom:10px;}
@@ -18,8 +18,8 @@ a:hover{text-decoration:underline;}
 </head>
 <body>
 <h1 id="title"></h1>
-<video id="player" controls autoplay playsinline preload="auto"></video>
-<div id="loading">正在加载视频...</div>
+<video id="player" controls></video>
+<div id="loading" style="display:none;">加载中...</div>
 <div id="episodeList"></div>
 <a href="index.html">← 返回视频库</a>
 
@@ -37,8 +37,8 @@ if(!folder){
   document.getElementById("title").innerText=decodeURIComponent(title);
 
   let episodes = [];
-  let current = 0;
 
+  // 获取文件夹下所有视频集
   fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
     .then(res=>res.json())
     .then(data=>{
@@ -50,8 +50,10 @@ if(!folder){
         }));
       if(episodes.length===0) throw "暂无视频";
       renderEpisodeList();
-      playEpisode(0);
-    }).catch(e=>loading.innerText="❌ 加载失败");
+    }).catch(e=>{
+      loading.style.display="block";
+      loading.innerText="❌ 加载失败";
+    });
 
   function renderEpisodeList(){
     episodeList.innerHTML="";
@@ -65,24 +67,16 @@ if(!folder){
 
   function playEpisode(index){
     if(index<0 || index>=episodes.length) return;
-    current=index;
-    updateButtons();
+    // 更新选中样式
+    Array.from(episodeList.children).forEach((btn,i)=>{
+      btn.classList.toggle("active",i===index);
+    });
     loading.style.display="block";
     player.src=episodes[index].url;
-    player.play();
+    player.pause(); // 不自动播放，用户点击播放按钮
+    player.load();
+    loading.style.display="none";
   }
-
-  function updateButtons(){
-    Array.from(episodeList.children).forEach((btn,i)=>{
-      btn.classList.toggle("active",i===current);
-    });
-  }
-
-  player.addEventListener("canplay",()=>{loading.style.display="none";});
-  player.addEventListener("waiting",()=>{loading.style.display="block";});
-  player.addEventListener("ended",()=>{
-    if(current<episodes.length-1) playEpisode(current+1);
-  });
 }
 </script>
 </body>
