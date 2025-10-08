@@ -1,0 +1,28 @@
+name: Auto Generate Video Thumbnails
+
+on:
+  push:
+    paths:
+      - 'mp4/**'
+
+jobs:
+  thumbnails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - run: npm install fluent-ffmpeg ffmpeg-static
+
+      - run: node generate_thumbnails.js
+
+      - run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add mp4/thumbnails/*
+          git commit -m "Auto-generate video thumbnails"
+          git push
+        continue-on-error: true
