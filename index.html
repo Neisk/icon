@@ -23,7 +23,7 @@
       flex-direction: column;
       min-height: 100vh;
       align-items: center;
-      padding: 40px 20px 80px; /* 底部留空间给页脚 */
+      padding: 40px 20px 120px;
     }
 
     h1 {
@@ -104,12 +104,53 @@
       background: rgba(15,15,15,0.9);
       backdrop-filter: blur(10px);
     }
+
+    .pagination {
+      margin-top: 30px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pagination button {
+      padding: 6px 12px;
+      background: var(--card);
+      color: var(--text);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .pagination button:hover {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .pagination button.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .ellipsis {
+      padding: 6px 12px;
+      color: var(--muted);
+      user-select: none;
+    }
   </style>
 </head>
 <body>
   <h1>🎞️ 视频画廊</h1>
 
   <div class="gallery" id="gallery"></div>
+  <div class="pagination" id="pagination"></div>
 
   <div class="player-modal" id="playerModal">
     <span class="close-btn" id="closeBtn">×</span>
@@ -121,51 +162,114 @@
   <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
   <script>
-    const folder = "mp4"; // 所有视频文件夹
+    const folder = "mp4";
     const gallery = document.getElementById("gallery");
+    const paginationEl = document.getElementById("pagination");
     const modal = document.getElementById("playerModal");
     const videoPlayer = document.getElementById("videoPlayer");
     const closeBtn = document.getElementById("closeBtn");
+    const pageSize = 6;
+    let currentPage = 1;
+    let videos = [];
 
-    // 获取 mp4 文件夹下所有视频
     fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
       .then(res => res.json())
       .then(data => {
-        const videos = data.filter(f => f.name.endsWith(".mp4") || f.name.endsWith(".mov"))
+        videos = data.filter(f => f.name.endsWith(".mp4") || f.name.endsWith(".mov"))
           .map(f => ({
             title: f.name,
             desc: "",
-            cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/default_cover.jpg", // 默认封面
+            cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/default_cover.jpg",
             src: `https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${encodeURIComponent(f.name)}`
           }));
-
-        videos.forEach(v => {
-          const card = document.createElement("div");
-          card.className = "video-card";
-          card.innerHTML = `
-            <img src="${v.cover}" alt="${v.title}">
-            <div class="video-info">
-              <h3>${v.title}</h3>
-              <p>${v.desc}</p>
-            </div>
-          `;
-
-          // 点击播放
-          card.addEventListener("click", () => {
-            videoPlayer.src = v.src;
-            modal.classList.add("active");
-            videoPlayer.play();
-          });
-
-          gallery.appendChild(card);
-        });
+        renderPage(currentPage);
       })
       .catch(err => {
         gallery.innerHTML = "❌ 视频加载失败";
         console.error(err);
       });
 
-    // 关闭弹窗
+    function renderPage(page) {
+      gallery.innerHTML = "";
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const pageVideos = videos.slice(start, end);
+
+      pageVideos.forEach(v => {
+        const card = document.createElement("div");
+        card.className = "video-card";
+        card.innerHTML = `
+          <img src="${v.cover}" alt="${v.title}">
+          <div class="video-info">
+            <h3>${v.title}</h3>
+            <p>${v.desc}</p>
+          </div>
+        `;
+        card.addEventListener("click", () => {
+          videoPlayer.src = v.src;
+          modal.classList.add("active");
+          videoPlayer.play();
+        });
+        gallery.appendChild(card);
+      });
+
+      renderPagination();
+    }
+
+    function renderPagination() {
+      paginationEl.innerHTML = "";
+      const totalPages = Math.ceil(videos.length / pageSize);
+
+      const createBtn = (text, page, active = false, disabled = false) => {
+        const btn = document.createElement("button");
+        btn.textContent = text;
+        if (active) btn.classList.add("active");
+        btn.disabled = disabled;
+        btn.addEventListener("click", () => {
+          currentPage = page;
+          renderPage(currentPage);
+        });
+        return btn;
+      };
+
+      // 上一页
+      paginationEl.appendChild(createBtn("上一页", currentPage - 1, false, currentPage === 1));
+
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) {
+          paginationEl.appendChild(createBtn(i, i, i === currentPage));
+        }
+      } else {
+        // 开头页
+        if (currentPage > 3) {
+          paginationEl.appendChild(createBtn(1, 1, 1 === currentPage));
+          const ellipsis = document.createElement("span");
+          ellipsis.className = "ellipsis";
+          ellipsis.textContent = "...";
+          paginationEl.appendChild(ellipsis);
+        }
+
+        // 中间页
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+        for (let i = startPage; i <= endPage; i++) {
+          paginationEl.appendChild(createBtn(i, i, i === currentPage));
+        }
+
+        // 末尾页
+        if (currentPage < totalPages - 2) {
+          const ellipsis = document.createElement("span");
+          ellipsis.className = "ellipsis";
+          ellipsis.textContent = "...";
+          paginationEl.appendChild(ellipsis);
+          paginationEl.appendChild(createBtn(totalPages, totalPages, totalPages === currentPage));
+        }
+      }
+
+      // 下一页
+      paginationEl.appendChild(createBtn("下一页", currentPage + 1, false, currentPage === totalPages));
+    }
+
     closeBtn.addEventListener("click", () => {
       modal.classList.remove("active");
       videoPlayer.pause();
