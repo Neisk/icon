@@ -38,12 +38,11 @@ if(!folder){
 
   let episodes = [];
 
-  // 获取文件夹下所有视频集
+  // 获取文件夹下所有视频
   fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
     .then(res=>res.json())
     .then(data=>{
       episodes = data.filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov"))
-        .sort((a,b)=>a.name.localeCompare(b.name))
         .map(f=>({
           name: f.name,
           url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${encodeURIComponent(f.name)}`
@@ -73,7 +72,7 @@ if(!folder){
     });
     loading.style.display="block";
     player.src=episodes[index].url;
-    player.pause(); // 不自动播放，用户点击播放按钮
+    player.pause(); // 点击播放模式，不自动播放
     player.load();
     loading.style.display="none";
   }
