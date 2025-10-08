@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Nisc | 多媒体画廊</title>
 <style>
 :root{
@@ -112,7 +112,6 @@ footer{
 </style>
 </head>
 <body>
-
 <h1>🎞️ Nisc 多媒体画廊</h1>
 
 <h2>视频画廊</h2>
@@ -134,48 +133,54 @@ footer{
 <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
 <script>
-const pageSize = 6;
-let videoFiles = [], fileFiles = [];
-let videoPage = 1, filePage = 1;
+const videoFolder="mp4";
+const fileFolder="share";
+const videoGallery=document.getElementById("videoGallery");
+const fileGallery=document.getElementById("fileGallery");
+const videoPaginationEl=document.getElementById("videoPagination");
+const filePaginationEl=document.getElementById("filePagination");
+const pageSize=6;
+let videoFiles=[], fileFiles=[];
+let videoPage=1, filePage=1;
 
-const videoGallery = document.getElementById("videoGallery");
-const fileGallery = document.getElementById("fileGallery");
-const videoPaginationEl = document.getElementById("videoPagination");
-const filePaginationEl = document.getElementById("filePagination");
+// 弹窗元素
+const modal=document.getElementById("playerModal");
+const videoPlayer=document.getElementById("videoPlayer");
+const closeBtn=document.getElementById("closeBtn");
+closeBtn.addEventListener("click",closeModal);
+modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(); });
+function closeModal(){ modal.classList.remove("active"); videoPlayer.pause(); videoPlayer.src=""; }
 
-const modal = document.getElementById("playerModal");
-const videoPlayer = document.getElementById("videoPlayer");
-const closeBtn = document.getElementById("closeBtn");
-closeBtn.addEventListener("click", closeModal);
-modal.addEventListener("click", (e) => { if(e.target === modal) closeModal(); });
-function closeModal() { modal.classList.remove("active"); videoPlayer.pause(); videoPlayer.src=""; }
+// 加载文件
+async function loadFiles(){
+  const vRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${videoFolder}`);
+  const vData = await vRes.json();
+  const fRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${fileFolder}`);
+  const fData = await fRes.json();
 
-async function loadData(){
-  try {
-    // 读取视频 JSON
-    const vRes = await fetch("https://raw.githubusercontent.com/Neisk/icon/main/video.json");
-    videoFiles = await vRes.json();
-    console.log("视频列表:", videoFiles);
+  videoFiles = vData.filter(f=>/\.(mp4|mov)$/i.test(f.name)).map(f=>({
+    name:f.name,
+    url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/${encodeURIComponent(f.name)}`,
+    thumb:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/thumbnails/${encodeURIComponent(f.name)}.jpg`
+  }));
 
-    // 读取文件 JSON
-    const fRes = await fetch("https://raw.githubusercontent.com/Neisk/icon/main/file.json");
-    fileFiles = await fRes.json();
-    console.log("文件列表:", fileFiles);
+  fileFiles = fData.map(f=>({
+    name:f.name,
+    url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${fileFolder}/${encodeURIComponent(f.name)}`
+  }));
 
-    renderVideoPage(videoPage);
-    renderFilePage(filePage);
-  } catch(e) {
-    console.error("读取 JSON 失败:", e);
-  }
+  renderVideoPage(videoPage);
+  renderFilePage(filePage);
 }
 
+// 渲染视频画廊
 function renderVideoPage(page){
-  videoGallery.innerHTML = '';
-  const start = (page-1)*pageSize;
-  const end = start + pageSize;
-  const pageFiles = videoFiles.slice(start,end);
+  videoGallery.innerHTML='';
+  const start=(page-1)*pageSize;
+  const end=start+pageSize;
+  const pageFiles=videoFiles.slice(start,end);
   pageFiles.forEach(f=>{
-    const card = document.createElement('div');
+    const card=document.createElement('div');
     card.className='card';
     card.innerHTML=`<img src="${f.thumb}" alt="${f.name}"><a>${f.name}</a>`;
     card.addEventListener("click",()=>{
@@ -185,33 +190,35 @@ function renderVideoPage(page){
     });
     videoGallery.appendChild(card);
   });
-  renderPagination(videoPaginationEl, videoFiles.length, videoPage, (p)=>{ videoPage=p; renderVideoPage(videoPage); });
+  renderPagination(videoPaginationEl,videoFiles.length,videoPage,(p)=>{ videoPage=p; renderVideoPage(videoPage); });
 }
 
+// 渲染文件画廊（文字列表）
 function renderFilePage(page){
-  fileGallery.innerHTML = '';
-  const start = (page-1)*pageSize;
-  const end = start + pageSize;
-  const pageFiles = fileFiles.slice(start,end);
+  fileGallery.innerHTML='';
+  const start=(page-1)*pageSize;
+  const end=start+pageSize;
+  const pageFiles=fileFiles.slice(start,end);
   pageFiles.forEach(f=>{
-    const card = document.createElement('div');
+    const card=document.createElement('div');
     card.className='card';
     card.style.height="auto";
     card.style.padding="10px 20px";
     card.innerHTML=`<a href="${f.url}" target="_blank">${f.name}</a>`;
     fileGallery.appendChild(card);
   });
-  renderPagination(filePaginationEl, fileFiles.length, filePage, (p)=>{ filePage=p; renderFilePage(filePage); });
+  renderPagination(filePaginationEl,fileFiles.length,filePage,(p)=>{ filePage=p; renderFilePage(filePage); });
 }
 
-function renderPagination(container, totalItems, current, callback){
+// 通用分页渲染
+function renderPagination(container,totalItems,current,callback){
   container.innerHTML='';
   const totalPages=Math.ceil(totalItems/pageSize);
   const createBtn=(text,page,active=false,disabled=false)=>{
     const btn=document.createElement("button");
     btn.textContent=text;
     if(active) btn.classList.add("active");
-    btn.disabled=disabled;
+    btn.disabled = disabled;
     btn.addEventListener("click",()=>{ callback(page); });
     return btn;
   };
@@ -221,7 +228,7 @@ function renderPagination(container, totalItems, current, callback){
 }
 
 // 初始化
-loadData();
+loadFiles();
 </script>
 </body>
 </html>
