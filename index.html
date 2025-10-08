@@ -23,7 +23,7 @@ li:hover{background:var(--accent);color:#000;}
 .title{font-size:14px;font-weight:600;}
 .desc{font-size:12px;color:var(--muted);}
 #pagination{margin-top:20px;}
-#pagination button{margin:0 5px;padding:5px 12px;border:none;border-radius:8px;background:#222;color:var(--text);cursor:pointer;}
+#pagination button{margin:0 5px;padding:5px 12px;border:none;border-radius:8px;background:#222;color:#fff;cursor:pointer;}
 #pagination button:hover{background:var(--accent);color:#000;}
 </style>
 </head>
@@ -80,29 +80,46 @@ async function loadVideos(categoryName, liElement){
   videoDirs.forEach(v=>{
     const vLi = document.createElement("li");
     vLi.textContent = v.name;
-    vLi.onclick=()=>loadGallery(categoryName, v.name);
+    vLi.onclick=()=>openPlayer(categoryName, v.name);
     subUl.appendChild(vLi);
   });
   liElement.appendChild(subUl);
 }
 
-// 加载视频库到 gallery（自动生成 CDN 链接）
-async function loadGallery(categoryName, videoName){
-  try{
-    const res = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}/${categoryName}/${videoName}`);
-    const parts = (await res.json()).filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov"))
-      .sort((a,b)=>a.name.localeCompare(b.name));
-    if(parts.length===0) {gallery.innerHTML="<p>暂无视频</p>"; return;}
-    const videoFolder = `${folder}/${categoryName}/${videoName}`;
-    const videoObj = {category:categoryName, name:videoName, folder:videoFolder};
-    videos = [videoObj]; // 当前只显示这个视频
-    filteredVideos = videos;
-    currentPage=1;
-    renderGallery();
-  }catch(e){gallery.innerHTML="<p style='color:#f55'>❌ 加载失败</p>";}
+// 打开播放页
+function openPlayer(categoryName, videoName){
+  const videoFolder = `${folder}/${categoryName}/${videoName}`;
+  window.location.href = `player.html?folder=${videoFolder}&title=${encodeURIComponent(videoName)}`;
 }
 
-// 渲染 gallery
+// 搜索（只搜索二级目录名）
+searchInput.addEventListener("input", async ()=>{
+  const key = searchInput.value.trim().toLowerCase();
+  gallery.innerHTML="";
+  if(!key) return;
+  // 搜索所有大类下的二级目录
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}`);
+  const categories = (await res.json()).filter(f=>f.type==="dir");
+  let results=[];
+  for(const cat of categories){
+    const res2 = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}/${cat.name}`);
+    const subdirs = (await res2.json()).filter(f=>f.type==="dir");
+    subdirs.forEach(sd=>{
+      if(sd.name.toLowerCase().includes(key)){
+        results.push({category:cat.name,name:sd.name,folder:`${folder}/${cat.name}/${sd.name}`});
+      }
+    });
+  }
+  if(results.length===0){
+    gallery.innerHTML="<p>没有搜索结果</p>";
+    return;
+  }
+  filteredVideos = results;
+  currentPage=1;
+  renderGallery();
+});
+
+// 渲染 gallery（每个二级目录一个卡片）
 function renderGallery(){
   gallery.innerHTML="";
   const start = (currentPage-1)*pageSize;
@@ -119,7 +136,7 @@ function renderGallery(){
     card.appendChild(info);
     gallery.appendChild(card);
 
-    // 封面生成（第一段首帧，CDN 链接）
+    // 封面生成：取第一个视频文件首帧
     fetch(`https://api.github.com/repos/${repo}/contents/${v.folder}`)
       .then(res=>res.json())
       .then(parts=>{
@@ -141,20 +158,11 @@ function renderGallery(){
         });
       });
 
-    card.onclick=()=>window.location.href=`player.html?folder=${v.folder}&title=${encodeURIComponent(v.name)}`;
+    card.onclick=()=>openPlayer(v.category,v.name);
   });
-  renderPagination();
 }
 
-// 搜索
-searchInput.addEventListener("input", ()=>{
-  const key = searchInput.value.trim().toLowerCase();
-  filteredVideos = videos.filter(v=>v.name.toLowerCase().includes(key));
-  currentPage=1;
-  renderGallery();
-});
-
-// 分页
+// 分页功能（可选）
 function renderPagination(){
   paginationDiv.innerHTML="";
   const totalPage = Math.ceil(filteredVideos.length/pageSize);
