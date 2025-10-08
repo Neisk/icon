@@ -133,15 +133,14 @@ footer{
 <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
 <script>
-const videoFolder="mp4";
-const fileFolder="share";
+const pageSize=6;
+let videoFiles=[], fileFiles=[];
+let videoPage=1, filePage=1;
+
 const videoGallery=document.getElementById("videoGallery");
 const fileGallery=document.getElementById("fileGallery");
 const videoPaginationEl=document.getElementById("videoPagination");
 const filePaginationEl=document.getElementById("filePagination");
-const pageSize=6;
-let videoFiles=[], fileFiles=[];
-let videoPage=1, filePage=1;
 
 // 弹窗元素
 const modal=document.getElementById("playerModal");
@@ -151,23 +150,12 @@ closeBtn.addEventListener("click",closeModal);
 modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(); });
 function closeModal(){ modal.classList.remove("active"); videoPlayer.pause(); videoPlayer.src=""; }
 
-// 加载文件
-async function loadFiles(){
-  const vRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${videoFolder}`);
-  const vData = await vRes.json();
-  const fRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${fileFolder}`);
-  const fData = await fRes.json();
-
-  videoFiles = vData.filter(f=>/\.(mp4|mov)$/i.test(f.name)).map(f=>({
-    name:f.name,
-    url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/${encodeURIComponent(f.name)}`,
-    thumb:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/thumbnails/${encodeURIComponent(f.name)}.jpg`
-  }));
-
-  fileFiles = fData.map(f=>({
-    name:f.name,
-    url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${fileFolder}/${encodeURIComponent(f.name)}`
-  }));
+// 加载 JSON 数据
+async function loadData(){
+  const vRes = await fetch("https://cdn.jsdelivr.net/gh/Neisk/icon@main/video.json");
+  videoFiles = await vRes.json();
+  const fRes = await fetch("https://cdn.jsdelivr.net/gh/Neisk/icon@main/file.json");
+  fileFiles = await fRes.json();
 
   renderVideoPage(videoPage);
   renderFilePage(filePage);
@@ -228,7 +216,7 @@ function renderPagination(container,totalItems,current,callback){
 }
 
 // 初始化
-loadFiles();
+loadData();
 </script>
 </body>
 </html>
