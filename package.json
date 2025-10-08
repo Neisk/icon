@@ -1,0 +1,15 @@
+{
+  "name": "video-gallery",
+  "version": "1.0.0",
+  "description": "自动生成视频缩略图并展示在网页画廊中",
+  "main": "generate_thumbnails.js",
+  "scripts": {
+    "start": "node generate_thumbnails.js"
+  },
+  "author": "Neisk",
+  "license": "MIT",
+  "dependencies": {
+    "ffmpeg-static": "^5.1.0",
+    "fluent-ffmpeg": "^2.1.2"
+  }
+}
