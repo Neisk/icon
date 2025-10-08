@@ -8,9 +8,21 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const videoFolder = path.join(__dirname, 'mp4');
 const thumbFolder = path.join(videoFolder, 'thumbnails');
 
-if (!fs.existsSync(thumbFolder)) fs.mkdirSync(thumbFolder);
+// 确保文件夹存在
+if (!fs.existsSync(videoFolder)) {
+  fs.mkdirSync(videoFolder, { recursive: true });
+  console.log(`📁 已创建 mp4 文件夹，请放入视频后重新运行`);
+  process.exit(0);
+}
+
+if (!fs.existsSync(thumbFolder)) fs.mkdirSync(thumbFolder, { recursive: true });
 
 const videos = fs.readdirSync(videoFolder).filter(f => /\.(mp4|mov)$/i.test(f));
+
+if (videos.length === 0) {
+  console.log('⚠️ mp4 文件夹没有视频文件，请添加 .mp4 文件后再运行');
+  process.exit(0);
+}
 
 videos.forEach(video => {
   const videoPath = path.join(videoFolder, video);
