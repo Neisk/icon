@@ -1,115 +1,266 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>视频库</title>
-<style>
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-background:#0d0d0d;color:#f5f5f5;text-align:center;padding:20px;}
-h1{color:#00b7ff;margin-bottom:20px;}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;max-width:1200px;margin:auto;}
-.card{background:#222;border-radius:12px;overflow:hidden;cursor:pointer;transition:0.2s;}
-.card:hover{transform:translateY(-3px);box-shadow:0 6px 15px rgba(0,0,0,0.3);}
-.card img{width:100%;height:120px;object-fit:cover;background:#000;}
-.card .title{padding:6px 8px;font-size:14px;font-weight:600;}
-#pagination{margin-top:20px;}
-#pagination button{margin:0 5px;padding:6px 12px;border:none;border-radius:8px;background:#222;color:#fff;cursor:pointer;}
-#pagination button:hover{background:#00b7ff;color:#000;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nisc | 视频画廊</title>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --text: #f5f5f5;
+      --muted: #888;
+      --accent: #00b7ff;
+      --card: #1a1a1a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* 顶部导航栏 */
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 30px;
+      background: rgba(15,15,15,0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    nav a {
+      margin-left: 24px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 15px;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--accent);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 50px 20px 100px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    p.subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .video-card {
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(255,255,255,0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 25px rgba(255,255,255,0.1);
+    }
+
+    .video-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    .video-info {
+      padding: 12px 16px;
+    }
+
+    .video-info h3 {
+      font-size: 16px;
+      margin: 0 0 6px;
+      color: var(--text);
+    }
+
+    .video-info p {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    footer {
+      padding: 20px;
+      color: #666;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* 播放弹窗 */
+    .player-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+
+    .player-modal.active {
+      display: flex;
+    }
+
+    .player {
+      max-width: 90%;
+      width: 800px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 0 30px rgba(255,255,255,0.1);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      font-size: 28px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 300;
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 14px 20px; }
+      nav a { margin-left: 16px; font-size: 14px; }
+      h1 { font-size: 22px; }
+    }
+  </style>
 </head>
 <body>
-<h1>📺 视频库</h1>
-<div class="gallery" id="gallery">正在加载视频...</div>
-<div id="pagination"></div>
+  <header>
+    <a href="https://nisc.fun" class="logo">Nisc</a>
+    <nav>
+      <a href="https://nisc.fun">主页</a>
+      <a href="#">视频</a>
+      <a href="https://nisc.fun/about">关于我</a>
+    </nav>
+  </header>
 
-<script>
-const folder = "mp4"; // 所有视频在 mp4/
-const gallery = document.getElementById("gallery");
-const paginationDiv = document.getElementById("pagination");
-let videos = [];
-let currentPage = 1;
-const pageSize = 6;
+  <main>
+    <h1>🎞️ Neisk 视频画廊</h1>
+    <p class="subtitle">点击任意缩略图即可在线播放</p>
 
-// 获取文件夹下所有视频
-fetch(`https://api.github.com/repos/Neisk/icon/contents/${folder}`)
-  .then(res=>res.json())
-  .then(data=>{
-    videos = data.filter(f=>f.name.endsWith(".mp4")||f.name.endsWith(".mov"))
-      .map(f=>({
-        name: f.name,
-        url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${folder}/${encodeURIComponent(f.name)}`
-      }));
-    renderGallery();
-    renderPagination();
-  })
-  .catch(e=>{
-    gallery.innerHTML="❌ 视频加载失败";
-    console.error(e);
-  });
+    <div class="gallery" id="gallery">
+      <!-- JS 自动填充视频卡片 -->
+    </div>
+  </main>
 
-// 渲染当前页
-function renderGallery(){
-  gallery.innerHTML="";
-  const start = (currentPage-1)*pageSize;
-  const pageVideos = videos.slice(start,start+pageSize);
-  pageVideos.forEach(v=>{
-    const card = document.createElement("div");
-    card.className="card";
+  <div class="player-modal" id="playerModal">
+    <span class="close-btn" id="closeBtn">×</span>
+    <div class="player">
+      <video id="videoPlayer" controls playsinline preload="metadata" width="100%"></video>
+    </div>
+  </div>
 
-    const img = document.createElement("img");
-    img.src = "default_cover.jpg"; // 默认封面，可放仓库根目录
-    const videoEl = document.createElement("video");
-    videoEl.src=v.url;
-    videoEl.muted=true;
-    videoEl.currentTime=0.1;
+  <footer>© 2025 Nisc.fun · Powered by GitHub Pages + jsDelivr</footer>
 
-    videoEl.addEventListener("loadeddata",()=>{
-      try {
-        const canvas=document.createElement("canvas");
-        canvas.width=videoEl.videoWidth;
-        canvas.height=videoEl.videoHeight;
-        const ctx=canvas.getContext("2d");
-        ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
-        img.src=canvas.toDataURL("image/jpeg");
-      } catch(e){
-        img.src="default_cover.jpg";
+  <script>
+    // ======== 视频列表 ========
+    const videos = [
+      {
+        title: "湖边日落剪影",
+        desc: "静谧的湖边，夕阳洒落波光粼粼的水面。",
+        cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/cover.jpg",
+        src: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/5237860479018326383.mp4"
+      },
+      {
+        title: "夜幕下的城市",
+        desc: "灯火阑珊的街头，霓虹闪烁的都市。",
+        cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/city.jpg",
+        src: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/city.mp4"
+      },
+      {
+        title: "海浪与清晨",
+        desc: "海浪轻拍沙滩，晨光穿透薄雾。",
+        cover: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/sea.jpg",
+        src: "https://cdn.jsdelivr.net/gh/Neisk/icon@main/sea.mp4"
+      }
+    ];
+
+    // ======== 页面逻辑 ========
+    const gallery = document.getElementById("gallery");
+    const modal = document.getElementById("playerModal");
+    const videoPlayer = document.getElementById("videoPlayer");
+    const closeBtn = document.getElementById("closeBtn");
+
+    videos.forEach(v => {
+      const card = document.createElement("div");
+      card.className = "video-card";
+      card.innerHTML = `
+        <img src="${v.cover}" alt="${v.title}">
+        <div class="video-info">
+          <h3>${v.title}</h3>
+          <p>${v.desc}</p>
+        </div>
+      `;
+      card.addEventListener("click", () => {
+        videoPlayer.src = v.src;
+        modal.classList.add("active");
+        videoPlayer.play();
+      });
+      gallery.appendChild(card);
+    });
+
+    closeBtn.addEventListener("click", () => {
+      modal.classList.remove("active");
+      videoPlayer.pause();
+      videoPlayer.src = "";
+    });
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("active");
+        videoPlayer.pause();
+        videoPlayer.src = "";
       }
     });
-    videoEl.addEventListener("error",()=>{img.src="default_cover.jpg";});
-
-    const title = document.createElement("div");
-    title.className="title";
-    title.textContent=v.name;
-
-    card.appendChild(img);
-    card.appendChild(title);
-
-    // 点击封面直接打开视频
-    card.onclick=()=>window.open(v.url, "_blank");
-
-    gallery.appendChild(card);
-  });
-}
-
-// 分页
-function renderPagination(){
-  paginationDiv.innerHTML="";
-  const totalPage = Math.ceil(videos.length/pageSize);
-  if(totalPage<=1) return;
-  if(currentPage>1){
-    const prev=document.createElement("button");
-    prev.textContent="上一页";
-    prev.onclick=()=>{currentPage--; renderGallery(); renderPagination();}
-    paginationDiv.appendChild(prev);
-  }
-  if(currentPage<totalPage){
-    const next=document.createElement("button");
-    next.textContent="下一页";
-    next.onclick=()=>{currentPage++; renderGallery(); renderPagination();}
-    paginationDiv.appendChild(next);
-  }
-}
-</script>
+  </script>
 </body>
 </html>
