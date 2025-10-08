@@ -151,15 +151,6 @@ closeBtn.addEventListener("click",closeModal);
 modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(); });
 function closeModal(){ modal.classList.remove("active"); videoPlayer.pause(); videoPlayer.src=""; }
 
-// 图标
-const icons={
-  text:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/txt.png",
-  apk:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/apk.png",
-  zip:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/zip.png",
-  pdf:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/pdf.png",
-  other:"https://cdn.jsdelivr.net/gh/Neisk/icon@main/icons/file.png"
-};
-
 // 加载文件
 async function loadFiles(){
   const vRes = await fetch(`https://api.github.com/repos/Neisk/icon/contents/${videoFolder}`);
@@ -173,20 +164,10 @@ async function loadFiles(){
     thumb:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${videoFolder}/thumbnails/${encodeURIComponent(f.name)}.jpg`
   }));
 
-  fileFiles = fData.map(f=>{
-    const ext=f.name.split('.').pop().toLowerCase();
-    let type='other';
-    if(['jpg','png','jpeg','gif'].includes(ext)) type='image';
-    else if(['txt'].includes(ext)) type='text';
-    else if(['apk'].includes(ext)) type='apk';
-    else if(['zip'].includes(ext)) type='zip';
-    else if(['pdf'].includes(ext)) type='pdf';
-    return {
-      name:f.name,
-      type:type,
-      url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${fileFolder}/${encodeURIComponent(f.name)}`
-    };
-  });
+  fileFiles = fData.map(f=>({
+    name:f.name,
+    url:`https://cdn.jsdelivr.net/gh/Neisk/icon@main/${fileFolder}/${encodeURIComponent(f.name)}`
+  }));
 
   renderVideoPage(videoPage);
   renderFilePage(filePage);
@@ -212,7 +193,7 @@ function renderVideoPage(page){
   renderPagination(videoPaginationEl,videoFiles.length,videoPage,(p)=>{ videoPage=p; renderVideoPage(videoPage); });
 }
 
-// 渲染文件画廊
+// 渲染文件画廊（文字列表）
 function renderFilePage(page){
   fileGallery.innerHTML='';
   const start=(page-1)*pageSize;
@@ -221,21 +202,9 @@ function renderFilePage(page){
   pageFiles.forEach(f=>{
     const card=document.createElement('div');
     card.className='card';
-    let thumb="";
-    if(f.type==='image'){
-      thumb=f.url;
-    } else{
-      thumb = icons[f.type] || icons['other'];
-    }
-    let content="";
-    if(f.type==='image'){
-      content=`<img src="${thumb}" alt="${f.name}"><a>${f.name}</a>`;
-    } else if(f.type==='text'){
-      content=`<img src="${thumb}" alt="${f.name}"><a href="${f.url}" target="_blank">${f.name}</a>`;
-    } else{
-      content=`<img src="${thumb}" alt="${f.name}"><a href="${f.url}" download>${f.name}</a>`;
-    }
-    card.innerHTML=content;
+    card.style.height="auto";
+    card.style.padding="10px 20px";
+    card.innerHTML=`<a href="${f.url}" target="_blank">${f.name}</a>`;
     fileGallery.appendChild(card);
   });
   renderPagination(filePaginationEl,fileFiles.length,filePage,(p)=>{ filePage=p; renderFilePage(filePage); });
