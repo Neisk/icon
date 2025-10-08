@@ -86,7 +86,7 @@ async function loadVideos(categoryName, liElement){
   liElement.appendChild(subUl);
 }
 
-// 加载视频库到 gallery
+// 加载视频库到 gallery（自动生成 CDN 链接）
 async function loadGallery(categoryName, videoName){
   try{
     const res = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}/${categoryName}/${videoName}`);
@@ -119,7 +119,7 @@ function renderGallery(){
     card.appendChild(info);
     gallery.appendChild(card);
 
-    // 封面生成（第一段首帧）
+    // 封面生成（第一段首帧，CDN 链接）
     fetch(`https://api.github.com/repos/${repo}/contents/${v.folder}`)
       .then(res=>res.json())
       .then(parts=>{
@@ -127,7 +127,7 @@ function renderGallery(){
           .sort((a,b)=>a.name.localeCompare(b.name))[0];
         if(!mp4Part) return;
         const videoEl = document.createElement("video");
-        videoEl.src = `https://cdn.jsdelivr.net/gh/${repo}@main/${v.folder}/${mp4Part.name}`;
+        videoEl.src = `https://cdn.jsdelivr.net/gh/${repo}@main/${v.folder}/${encodeURIComponent(mp4Part.name)}`;
         videoEl.crossOrigin="anonymous";
         videoEl.muted=true;
         videoEl.currentTime=0.1;
